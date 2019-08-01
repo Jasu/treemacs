@@ -152,6 +152,17 @@ Returns t if extensions were inserted.")
 
 Returns t if extensions were inserted."))
 
+(defvar treemacs--child-keymaps (ht) "Hash table of keymaps.")
+
+(defsubst treemacs--get-child-node-keymap (parent-keymap state)
+  "Get a keymap combinded of PARENT-KEYMAP and the keymap of STATE."
+  (let* ((child-keymap (button-type-get state 'keymap))
+         (key (cons parent-keymap child-keymap)))
+    (or (ht-get treemacs--child-keymaps key)
+        (let ((keymap (make-composed-keymap child-keymap (symbol-value parent-keymap))))
+          (ht-set treemacs--child-keymaps key keymap)
+          keymap))))
+
 (defsubst treemacs-as-icon (string &rest more-properties)
   "Turn STRING into an icon for treemacs.
 Optionally include MORE-PROPERTIES (like `face' or `display')."
@@ -195,6 +206,7 @@ node for quick retrieval later."
                 'button '(t)
                 'category (button-category-symbol ',state)
                 ,@(when face `((quote face) ,face))
+                'keymap (treemacs--get-child-node-keymap keymap ',state)
                 :custom t
                 :state ,state
                 :parent node
@@ -263,6 +275,7 @@ arguments (except as specified by their interactive specifier.)"
           delete-action
           copy-action
           rename-action
+          create-action
           after-expand
           after-collapse
           top-level-marker
@@ -297,6 +310,9 @@ DELETE-ACTION, COPY-ACTION, and RENAME-ACTIONS are actions to perform when user
 requests the respective action. The actions must be interactive functions, as
 they are bound to the keymap of the button. The actions are not called with any
 arguments (except as specified by their interactive specifier.)
+
+CREATE-ACTION is like the actions above, but is also active for direct children
+of this node.
 
 AFTER-EXPAND and AFTER-COLLAPSE are optional forms that will be called after a
 node has been expanded or collapsed. The closed or opened node marker will be
@@ -337,16 +353,17 @@ additional keys."
     ":icon-open and :icon-open-form are mutually exclusive.")
   (treemacs-static-assert (or (null icon-closed) (null icon-closed-form))
     ":icon-closed and :icon-closed-form are mutually exclusive.")
-  (let ((variadic?         (equal top-level-marker (quote 'variadic)))
-        (open-icon-name    (intern (format "treemacs-icon-%s-open"    (symbol-name name))))
-        (closed-icon-name  (intern (format "treemacs-icon-%s-closed"  (symbol-name name))))
-        (open-state-name   (intern (format "treemacs-%s-open-state"   (symbol-name name))))
-        (closed-state-name (intern (format "treemacs-%s-closed-state" (symbol-name name))))
-        (expand-name       (intern (format "treemacs-expand-%s"       (symbol-name name))))
-        (collapse-name     (intern (format "treemacs-collapse-%s"     (symbol-name name))))
-        (do-expand-name    (intern (format "treemacs--do-expand-%s"   (symbol-name name))))
-        (do-collapse-name  (intern (format "treemacs--do-collapse-%s" (symbol-name name))))
-        (button-map-name   (intern (format "treemacs--%s-map"         (symbol-name name)))))
+  (let ((variadic?             (equal top-level-marker (quote 'variadic)))
+        (open-icon-name        (intern (format "treemacs-icon-%s-open"    (symbol-name name))))
+        (closed-icon-name      (intern (format "treemacs-icon-%s-closed"  (symbol-name name))))
+        (open-state-name       (intern (format "treemacs-%s-open-state"   (symbol-name name))))
+        (closed-state-name     (intern (format "treemacs-%s-closed-state" (symbol-name name))))
+        (expand-name           (intern (format "treemacs-expand-%s"       (symbol-name name))))
+        (collapse-name         (intern (format "treemacs-collapse-%s"     (symbol-name name))))
+        (do-expand-name        (intern (format "treemacs--do-expand-%s"   (symbol-name name))))
+        (do-collapse-name      (intern (format "treemacs--do-collapse-%s" (symbol-name name))))
+        (button-map-name       (intern (format "treemacs--%s-map"         (symbol-name name))))
+        (child-button-map-name (intern (format "treemacs--%s-child-map"   (symbol-name name)))))
     `(progn
        ,(when open-icon-name
           `(defvar ,open-icon-name ,icon-open))
@@ -365,7 +382,12 @@ additional keys."
                                   ,@(when delete-action `((define-key map [remap treemacs-delete]    ,delete-action)))
                                   ,@(when rename-action `((define-key map [remap treemacs-rename]    ,rename-action)))
                                   ,@(when copy-action   `((define-key map [remap treemacs-copy-file] ,copy-action)))
+                                  ,@(when create-action `((define-key map (kbd "c")                  ,create-action)))
                                   map))
+       ,@(when create-action
+           `((defvar ,child-button-map-name (let ((map (make-sparse-keymap)))
+                                              (define-key map (kbd "c") ,create-action)
+                                              map))))
 
        (define-button-type ',open-state-name :supertype 'treemacs
          'keymap ,button-map-name)
@@ -410,7 +432,8 @@ additional keys."
              :nodes items
              :depth depth
              :node-name item
-             :node-action ,render-action)
+             :node-action ,render-action
+             :extra-vars ((keymap ',(when create-action child-button-map-name))))
             :post-open-action
             (progn
               (treemacs-on-expand

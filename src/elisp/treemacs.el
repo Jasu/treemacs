@@ -60,6 +60,8 @@
             (format-time-string "%Y.%m.%d" (current-time))
             emacs-version)))
 
+(define-button-type 'treemacs 'help-echo nil 'keymap nil)
+
 ;;;###autoload
 (defun treemacs-version ()
   "Return the `treemacs-version'."

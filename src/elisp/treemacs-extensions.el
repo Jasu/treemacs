@@ -198,9 +198,8 @@ node for quick retrieval later."
          ,icon
          (propertize ,label-form
                      'button '(t)
-                     'category 'default-button
+                     'category 'treemacs-button
                      ,@(when face `((quote face) ,face))
-                     'help-echo nil
                      :custom t
                      :state ,state
                      :parent node
@@ -429,7 +428,7 @@ additional keys."
                 ,(if icon-closed closed-icon-name icon-closed-form)
                 (propertize ,root-label
                             'button '(t)
-                            'category 'default-button
+                            'category 'treemacs-button
                             'face ,root-face
                             :custom t
                             :key ,root-key-form
@@ -453,29 +452,29 @@ additional keys."
                     ;; node. Its depth is -1 and it is not visible, but can still be used to update
                     ;; the entire extension without explicitly worrying about complex dom changes.
                     `(defun ,ext-name ()
-                         (treemacs-with-writable-buffer
-                          (save-excursion
-                            (let ((pr (make-treemacs-project
-                                       :name ,root-label
-                                       :path ,root-key-form
-                                       :path-status 'extension))
-                                  (button-start (point-marker)))
-                              (treemacs--set-project-position ,root-key-form (point-marker))
-                              (insert (propertize "Hidden Node\n"
-                                                  'button '(t)
-                                                  'category 'default-button
-                                                  'invisible t
-                                                  'skip t
-                                                  :custom t
-                                                  :key ,root-key-form
-                                                  :path (list :custom ,root-key-form)
-                                                  :depth -1
-                                                  :project pr
-                                                  :state ,closed-state-name))
-                              (let ((marker (copy-marker (point) t)))
-                                (funcall ',do-expand-name button-start)
-                                (goto-char marker)))))
-                         t)
+                       (treemacs-with-writable-buffer
+                        (save-excursion
+                          (let ((pr (make-treemacs-project
+                                     :name ,root-label
+                                     :path ,root-key-form
+                                     :path-status 'extension))
+                                (button-start (point-marker)))
+                            (treemacs--set-project-position ,root-key-form (point-marker))
+                            (insert (propertize "Hidden Node\n"
+                                                'button '(t)
+                                                'category 'treemacs-button
+                                                'invisible t
+                                                'skip t
+                                                :custom t
+                                                :key ,root-key-form
+                                                :path (list :custom ,root-key-form)
+                                                :depth -1
+                                                :project pr
+                                                :state ,closed-state-name))
+                            (let ((marker (copy-marker (point) t)))
+                              (funcall ',do-expand-name button-start)
+                              (goto-char marker)))))
+                       t)
                   `(progn
                      (defun ,ext-name (&rest _)
                        (treemacs-with-writable-buffer
@@ -487,7 +486,7 @@ additional keys."
                           (treemacs--set-project-position ,root-key-form (point-marker))
                           (insert (propertize ,root-label
                                               'button '(t)
-                                              'category 'default-button
+                                              'category 'treemacs-button
                                               'face ,root-face
                                               :custom t
                                               :key ,root-key-form

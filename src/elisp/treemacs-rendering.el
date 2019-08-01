@@ -184,9 +184,7 @@ DEPTH indicates how deep in the filetree the current button is."
       ,prefix
       (propertize (file-name-nondirectory ,path)
                   'button '(t)
-                  'category 'default-button
-                  'help-echo nil
-                  'keymap nil
+                  'category 'treemacs-button
                   :default-face 'treemacs-directory-face
                   :state 'dir-node-closed
                   :path ,path
@@ -207,9 +205,7 @@ DEPTH indicates how deep in the filetree the current button is."
       (treemacs-icon-for-file ,path)
       (propertize (file-name-nondirectory ,path)
                   'button '(t)
-                  'category 'default-button
-                  'help-echo nil
-                  'keymap nil
+                  'category 'treemacs-button
                   :default-face 'treemacs-git-unmodified-face
                   :state 'file-node-closed
                   :path ,path
@@ -576,7 +572,7 @@ PROJECT: Project Struct"
   (insert
    (propertize (treemacs-project->name project)
                'button '(t)
-               'category 'default-button
+               'category 'treemacs-button
                'face (treemacs--root-face project)
                :project project
                :symlink (when (treemacs-project->is-readable? project)

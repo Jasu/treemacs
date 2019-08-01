@@ -193,7 +193,7 @@ node for quick retrieval later."
   `(concat
     (propertize (concat prefix ,icon ,label-form)
                 'button '(t)
-                'category 'treemacs-button
+                'category (button-category-symbol ',state)
                 ,@(when face `((quote face) ,face))
                 :custom t
                 :state ,state
@@ -204,7 +204,7 @@ node for quick retrieval later."
                 ,@more-properties)
     (when (and (zerop depth) treemacs-space-between-root-nodes) "\n")))
 
-(cl-defmacro treemacs-define-leaf-node (name icon &key ret-action tab-action mouse1-action visit-action)
+(cl-defmacro treemacs-define-leaf-node (name icon &key ret-action tab-action mouse1-action visit-action delete-action copy-action rename-action)
   "Define a type of node that is a leaf and cannot be further expanded.
 
 Based on the given NAME this macro will define a `treemacs-${name}-state' state
@@ -217,10 +217,16 @@ is for a file you can also use `treemacs-icon-for-file'.
 
 RET-ACTION, TAB-ACTION and MOUSE1-ACTION are function references that will be
 invoked when RET or TAB are pressed or mouse1 is double-clicked a node of this
-type. VISIT-ACTION is used in `treemacs-visit-node-no-split' actions."
+type. VISIT-ACTION is used in `treemacs-visit-node-no-split' actions.
+
+DELETE-ACTION, COPY-ACTION, and RENAME-ACTIONS are actions to perform when user
+requests the respective action. The actions must be interactive functions, as
+they are bound to the keymap of the button. The actions are not called with any
+arguments (except as specified by their interactive specifier.)"
   (declare (indent 1))
   (let ((state-name (intern (format "treemacs-%s-state" name)))
-        (icon-name  (intern (format "treemacs-%s-icon" name))))
+        (icon-name  (intern (format "treemacs-%s-icon" name)))
+        (button-map-name (intern (format "treemacs--%s-map" name))))
     `(progn
        (defvar ,state-name ',state-name)
        ,(unless (equal icon (quote 'dynamic-icon))
@@ -233,6 +239,15 @@ type. VISIT-ACTION is used in `treemacs-visit-node-no-split' actions."
           `(treemacs-define-doubleclick-action ,state-name ,mouse1-action))
        ,(when visit-action
           `(put ',state-name :treemacs-visit-action ,visit-action))
+
+       (defvar ,button-map-name (let ((map (make-sparse-keymap)))
+                                  ,@(when delete-action `((define-key map [remap treemacs-delete]    ,delete-action)))
+                                  ,@(when rename-action `((define-key map [remap treemacs-rename]    ,rename-action)))
+                                  ,@(when copy-action   `((define-key map [remap treemacs-copy-file] ,copy-action)))
+                                  map))
+
+       (define-button-type ',state-name :supertype 'treemacs
+         'keymap ,button-map-name)
        t)))
 
 (cl-defmacro treemacs-define-expandable-node
@@ -245,6 +260,9 @@ type. VISIT-ACTION is used in `treemacs-visit-node-no-split' actions."
           render-action
           ret-action
           visit-action
+          delete-action
+          copy-action
+          rename-action
           after-expand
           after-collapse
           top-level-marker
@@ -274,6 +292,11 @@ RET-ACTION will define what function is called when RET is pressed on this type
 of node. Only RET, without TAB and mouse1 can be defined since for expandable
 nodes both TAB and RET should toggle expansion/collapse. VISIT-ACTION is used in
 `treemacs-visit-node-no-split' actions.
+
+DELETE-ACTION, COPY-ACTION, and RENAME-ACTIONS are actions to perform when user
+requests the respective action. The actions must be interactive functions, as
+they are bound to the keymap of the button. The actions are not called with any
+arguments (except as specified by their interactive specifier.)
 
 AFTER-EXPAND and AFTER-COLLAPSE are optional forms that will be called after a
 node has been expanded or collapsed. The closed or opened node marker will be
@@ -322,7 +345,8 @@ additional keys."
         (expand-name       (intern (format "treemacs-expand-%s"       (symbol-name name))))
         (collapse-name     (intern (format "treemacs-collapse-%s"     (symbol-name name))))
         (do-expand-name    (intern (format "treemacs--do-expand-%s"   (symbol-name name))))
-        (do-collapse-name  (intern (format "treemacs--do-collapse-%s" (symbol-name name)))))
+        (do-collapse-name  (intern (format "treemacs--do-collapse-%s" (symbol-name name))))
+        (button-map-name   (intern (format "treemacs--%s-map"         (symbol-name name)))))
     `(progn
        ,(when open-icon-name
           `(defvar ,open-icon-name ,icon-open))
@@ -336,6 +360,18 @@ additional keys."
 
        (add-to-list 'treemacs-valid-button-states ,closed-state-name)
        (add-to-list 'treemacs-valid-button-states ,open-state-name)
+
+       (defvar ,button-map-name (let ((map (make-sparse-keymap)))
+                                  ,@(when delete-action `((define-key map [remap treemacs-delete]    ,delete-action)))
+                                  ,@(when rename-action `((define-key map [remap treemacs-rename]    ,rename-action)))
+                                  ,@(when copy-action   `((define-key map [remap treemacs-copy-file] ,copy-action)))
+                                  map))
+
+       (define-button-type ',open-state-name :supertype 'treemacs
+         'keymap ,button-map-name)
+
+       (define-button-type ',closed-state-name :supertype 'treemacs
+         'keymap ,button-map-name)
 
        ,(when (or ret-action visit-action)
           `(progn
@@ -423,7 +459,7 @@ additional keys."
                              ,(if icon-closed closed-icon-name icon-closed-form)
                              ,root-label)
                             'button '(t)
-                            'category 'treemacs-button
+                            'category (button-category-symbol ',closed-state-name)
                             'face ,root-face
                             :custom t
                             :key ,root-key-form
@@ -479,7 +515,7 @@ additional keys."
                                                ,(if icon-closed closed-icon-name icon-closed-form)
                                                ,root-label)
                                               'button '(t)
-                                              'category 'treemacs-button
+                                              'category (button-category-symbol ',closed-state-name)
                                               'face ,root-face
                                               :custom t
                                               :key ,root-key-form

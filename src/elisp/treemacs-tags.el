@@ -138,16 +138,14 @@ PARENT: Button
 DEPTH: Int"
   (inline-letevals (item prefix parent depth)
     (inline-quote
-     (concat
-      ,prefix
-      (propertize (car ,item)
-                  'button '(t)
-                  'category 'treemacs-button
-                  'face 'treemacs-tags-face
-                  :state 'tag-node
-                  :parent ,parent
-                  :depth ,depth
-                  :marker (cdr ,item))))))
+     (propertize (concat ,prefix (car ,item))
+                 'button '(t)
+                 'category 'treemacs-button
+                 'face 'treemacs-tags-face
+                 :state 'tag-node
+                 :parent ,parent
+                 :depth ,depth
+                 :marker (cdr ,item)))))
 
 (define-inline treemacs--insert-tag-node (node prefix parent depth)
   "Return the text to insert for a tag NODE.
@@ -160,16 +158,14 @@ PARENT: Button
 DEPTH: Int"
   (inline-letevals (node prefix parent depth)
     (inline-quote
-     (concat
-      ,prefix
-      (propertize (car ,node)
-                  'button '(t)
-                  'category 'treemacs-button
-                  'face 'treemacs-tags-face
-                  :state 'tag-node-closed
-                  :parent ,parent
-                  :depth ,depth
-                  :index (cdr ,node))))))
+     (propertize (concat ,prefix (car ,node))
+                 'button '(t)
+                 'category 'treemacs-button
+                 'face 'treemacs-tags-face
+                 :state 'tag-node-closed
+                 :parent ,parent
+                 :depth ,depth
+                 :index (cdr ,node)))))
 
 (defun treemacs--expand-file-node (btn &optional recursive)
   "Open tag items for file BTN.

@@ -235,10 +235,9 @@ OPEN-ACTION or POST-OPEN-ACTION are expected to take over insertion."
      (-let [p (point)]
        (treemacs-with-writable-buffer
         (treemacs-button-put ,button :state ,new-state)
-        ,@(when new-icon
-            `((beginning-of-line)
-              (treemacs--button-symbol-switch ,new-icon)))
         (goto-char ,button)
+        ,@(when new-icon
+            `((treemacs--button-symbol-switch ,new-icon)))
         (forward-line 1)
         (unless (eq (char-before) ?\n)
           (insert "\n"))

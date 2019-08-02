@@ -155,7 +155,7 @@ the height of treemacs' icons must be taken into account."
                  ('mod-time-asc #'treemacs--sort-mod-time-asc)
                  ('mod-time-desc #'treemacs--sort-mod-time-desc)
                  (other other)))
-              (entries (-> ,dir (directory-files :absolute-names nil :no-sort)))
+              (entries (directory-files ,dir :absolute-names nil :no-sort))
               (files)
               (dirs))
          (dolist (path entries)
@@ -169,55 +169,44 @@ the height of treemacs' icons must be taken into account."
                (sort files sort-func)))))))
 
 
-(define-inline treemacs--create-dir-button-strings (path prefix parent depth git-info)
+(define-inline treemacs--create-dir-button-strings (path prefix git-info default-properties)
   "Return the text to insert for a directory button for PATH.
 PREFIX is a string inserted as indentation.
-PARENT is the (optional) button under which this one is inserted.
-DEPTH indicates how deep in the filetree the current button is.
 GIT-INFO is the git info of the current directory."
   ;; for directories the icon is included in the prefix since it's always known
-  (inline-letevals (path prefix parent depth git-info)
+  (inline-letevals (path prefix git-info default-properties)
     (inline-quote
      (unless (--any (funcall it ,path git-info) treemacs-pre-file-insert-predicates)
        (let ((string (concat ,prefix (file-name-nondirectory ,path))))
          (add-text-properties 0 (length string)
-                              (list
-                               'button '(t)
-                               'category 'treemacs-button
-                               'face (treemacs--get-node-face ,path ,git-info 'treemacs-directory-face)
-                               :default-face 'treemacs-directory-face
-                               :state 'dir-node-closed
-                               :path ,path
-                               :key ,path
-                               :symlink (file-symlink-p ,path)
-                               :parent ,parent
-                               :depth ,depth)
+                              (nconc
+                               (list
+                                'face (treemacs--get-node-face ,path ,git-info 'treemacs-directory-face)
+                                :path ,path
+                                :key ,path
+                                :symlink (file-symlink-p ,path))
+                               ,default-properties)
                               string)
          string)))))
 
-(define-inline treemacs--create-file-button-strings (path prefix parent depth git-info)
+(define-inline treemacs--create-file-button-strings (path prefix git-info default-properties)
   "Return the text to insert for a file button for PATH.
 PREFIX is a string inserted as indentation.
-PARENT is the (optional) button under which this one is inserted.
-DEPTH indicates how deep in the filetree the current button is.
 GIT-INFO is the git info of the current directory."
-  (inline-letevals (path prefix parent depth git-info)
+  (inline-letevals (path prefix git-info default-properties)
     (inline-quote
      (unless (--any (funcall it ,path git-info) treemacs-pre-file-insert-predicates)
-       (let ((string (concat ,prefix
-                             (treemacs-icon-for-file ,path)
-                             (file-name-nondirectory ,path))))
+       (let* ((filename (file-name-nondirectory ,path))
+              (string (concat ,prefix
+                              (treemacs-icon-for-file filename)
+                              filename)))
          (add-text-properties 0 (length string)
-                              (list
-                               'button '(t)
-                               'category 'treemacs-button
-                               'face (treemacs--get-node-face ,path ,git-info 'treemacs-git-unmodified-face)
-                               :default-face 'treemacs-git-unmodified-face
-                               :state 'file-node-closed
-                               :path ,path
-                               :key ,path
-                               :parent ,parent
-                               :depth ,depth)
+                              (nconc
+                               (list
+                                'face (treemacs--get-node-face ,path ,git-info 'treemacs-git-unmodified-face)
+                                :path ,path
+                                :key ,path)
+                               ,default-properties)
                               string)
          string)))))
 
@@ -368,23 +357,35 @@ set to PARENT."
                          (treemacs--get-or-parse-git-result ,git-future))
                         ('deferred
                           (run-with-timer 0.5 nil #'treemacs--apply-deferred-git-state ,parent ,git-future (current-buffer))
-                          (or (ht-get treemacs--git-cache ,root) (ht)))
-                        (_ (ht)))))
+                          (ht-get treemacs--git-cache ,root))))
+            (dirs (treemacs--create-buttons
+                   :nodes dirs
+                   :extra-vars ((dir-prefix (concat prefix treemacs-icon-dir-closed))
+                                (default-properties (list 'button '(t)
+                                                          'category 'treemacs-button
+                                                          :default-face 'treemacs-directory-face
+                                                          :state 'dir-node-closed
+                                                          :parent ,parent
+                                                          :depth depth)))
+                   :depth ,depth
+                   :node-name node
+                   :node-action (treemacs--create-dir-button-strings node dir-prefix git-info default-properties)))
+            (files (treemacs--create-buttons
+                    :nodes files
+                    :depth ,depth
+                    :node-name node
+                    :extra-vars ((default-properties (list 'button '(t)
+                                                           'category 'treemacs-button
+                                                           :default-face 'treemacs-git-unmodified-face
+                                                           :state 'file-node-closed
+                                                           :parent ,parent
+                                                           :depth depth)))
+                    :node-action (treemacs--create-file-button-strings node prefix git-info default-properties))))
 
-       (dolist (string (treemacs--create-buttons
-                        :nodes dirs
-                        :extra-vars ((dir-prefix (concat prefix treemacs-icon-dir-closed)))
-                        :depth ,depth
-                        :node-name node
-                        :node-action (treemacs--create-dir-button-strings node dir-prefix ,parent ,depth git-info)))
-         (insert string ?\n))
-
-       (dolist (string (treemacs--create-buttons
-                        :nodes files
-                        :depth ,depth
-                        :node-name node
-                        :node-action (treemacs--create-file-button-strings node prefix ,parent ,depth git-info)))
-         (insert string ?\n))
+       (when dirs
+         (insert (mapconcat #'identity dirs "\n") ?\n))
+       (when files
+         (insert (mapconcat #'identity files "\n") ?\n))
 
        (save-excursion
          (treemacs--collapse-dirs (treemacs--parse-collapsed-dirs ,collapse-process))

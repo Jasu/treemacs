@@ -155,11 +155,19 @@ the height of treemacs' icons must be taken into account."
                  ('mod-time-asc #'treemacs--sort-mod-time-asc)
                  ('mod-time-desc #'treemacs--sort-mod-time-desc)
                  (other other)))
-              (entries (-> ,dir (directory-files :absolute-names nil :no-sort) (treemacs--filter-files-to-be-shown)))
-              (dirs-files (-separate #'file-directory-p entries)))
-         (setf (car dirs-files) (sort (car dirs-files) sort-func)
-               (cadr dirs-files) (sort (cadr dirs-files) sort-func))
-         dirs-files)))))
+              (entries (-> ,dir (directory-files :absolute-names nil :no-sort)))
+              (files)
+              (dirs))
+         (dolist (path entries)
+           (when (if treemacs-show-hidden-files
+                     (treemacs--reject-ignored-files path)
+                   (treemacs--reject-ignored-and-dotfiles path))
+             (if (file-directory-p path)
+                 (push path dirs)
+               (push path files))))
+         (list (sort dirs sort-func)
+               (sort files sort-func)))))))
+
 
 (define-inline treemacs--create-dir-button-strings (path prefix parent depth git-info)
   "Return the text to insert for a directory button for PATH.

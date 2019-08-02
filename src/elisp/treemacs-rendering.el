@@ -81,7 +81,7 @@ is a marker pointing to POS."
   "Get the current screen line in the selected window."
   (declare (side-effect-free t))
   (inline-quote
-   (max 1 (count-screen-lines (window-start) (point-at-eol)))))
+   (max 1 (count-lines (window-start) (point-at-eol)))))
 
 (define-inline treemacs--lines-in-window ()
   "Determine the number of lines visible in the current (treemacs) window.

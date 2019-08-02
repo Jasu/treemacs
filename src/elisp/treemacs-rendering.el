@@ -438,8 +438,7 @@ set to PARENT."
              (treemacs--start-watching path)
              ;; Performing FS ops on a disconnected Tramp project
              ;; might have changed the state to connected.
-             (treemacs-with-writable-buffer
-              (treemacs-project->refresh-path-status! project)))))))))
+             (treemacs-project->refresh-path-status! project))))))))
 
 (defun treemacs--collapse-root-node (btn &optional recursive)
   "Collapse the given root BTN.

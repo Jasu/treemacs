@@ -182,18 +182,21 @@ GIT-INFO is the git info of the current directory."
   (inline-letevals (path prefix parent depth git-info)
     (inline-quote
      (unless (--any (funcall it ,path git-info) treemacs-pre-file-insert-predicates)
-       (propertize (concat ,prefix
-                           (file-name-nondirectory ,path))
-                   'button '(t)
-                   'category 'treemacs-button
-                   'face (treemacs--get-node-face ,path ,git-info 'treemacs-directory-face)
-                   :default-face 'treemacs-directory-face
-                   :state 'dir-node-closed
-                   :path ,path
-                   :key ,path
-                   :symlink (file-symlink-p ,path)
-                   :parent ,parent
-                   :depth ,depth)))))
+       (let ((string (concat ,prefix (file-name-nondirectory ,path))))
+         (add-text-properties 0 (length string)
+                              (list
+                               'button '(t)
+                               'category 'treemacs-button
+                               'face (treemacs--get-node-face ,path ,git-info 'treemacs-directory-face)
+                               :default-face 'treemacs-directory-face
+                               :state 'dir-node-closed
+                               :path ,path
+                               :key ,path
+                               :symlink (file-symlink-p ,path)
+                               :parent ,parent
+                               :depth ,depth)
+                              string)
+         string)))))
 
 (define-inline treemacs--create-file-button-strings (path prefix parent depth git-info)
   "Return the text to insert for a file button for PATH.
@@ -204,19 +207,22 @@ GIT-INFO is the git info of the current directory."
   (inline-letevals (path prefix parent depth git-info)
     (inline-quote
      (unless (--any (funcall it ,path git-info) treemacs-pre-file-insert-predicates)
-       (propertize (concat
-                    ,prefix
-                    (treemacs-icon-for-file ,path)
-                    (file-name-nondirectory ,path))
-                   'button '(t)
-                   'category 'treemacs-button
-                   'face (treemacs--get-node-face ,path ,git-info 'treemacs-git-unmodified-face)
-                   :default-face 'treemacs-git-unmodified-face
-                   :state 'file-node-closed
-                   :path ,path
-                   :key ,path
-                   :parent ,parent
-                   :depth ,depth)))))
+       (let ((string (concat ,prefix
+                             (treemacs-icon-for-file ,path)
+                             (file-name-nondirectory ,path))))
+         (add-text-properties 0 (length string)
+                              (list
+                               'button '(t)
+                               'category 'treemacs-button
+                               'face (treemacs--get-node-face ,path ,git-info 'treemacs-git-unmodified-face)
+                               :default-face 'treemacs-git-unmodified-face
+                               :state 'file-node-closed
+                               :path ,path
+                               :key ,path
+                               :parent ,parent
+                               :depth ,depth)
+                              string)
+         string)))))
 
 (cl-defmacro treemacs--button-open (&key button new-state new-icon open-action post-open-action immediate-insert)
   "Building block macro to open a BUTTON.

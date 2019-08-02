@@ -274,7 +274,7 @@ DIRS: List of Collapse Paths. Each Collapse Path is a list of
       (dolist (it dirs)
         ;; use when-let because the operation may fail when we try to move to a node
         ;; that us not visible because treemacs ignores it
-        (-when-let (b (treemacs-goto-file-node (car it) project))
+        (-when-let (b (treemacs-find-file-node (car it) project))
           ;; no warning since filewatch mode is known to be defined
           (when (with-no-warnings treemacs-filewatch-mode)
             (treemacs--start-watching (car it))

@@ -735,14 +735,14 @@ failed.  PROJECT is used for determining whether Git actions are appropriate."
   (inline-letevals (btn dir-parts project)
     (inline-quote
      (let* ((root       (treemacs-button-get ,btn :path))
-            (git-future (treemacs--git-status-process root ,project))
+            (git-future nil)
             (last-index (- (length ,dir-parts) 1))
             (depth      (treemacs-button-get ,btn :depth)))
        (goto-char ,btn)
        ;; point is currently on the next closest dir to the followed file we could get
        ;; from the dom, so we expand it to keep going
        (pcase (treemacs-button-get ,btn :state)
-         ('dir-node-closed (treemacs--expand-dir-node ,btn :git-future git-future))
+         ('dir-node-closed (treemacs--expand-dir-node ,btn :git-future (setq git-future (treemacs--git-status-process root ,project))))
          ('root-node-closed (treemacs--expand-root-node ,btn)))
        (catch 'follow-failed
          (let ((index 0)
@@ -795,7 +795,8 @@ failed.  PROJECT is used for determining whether Git actions are appropriate."
              ;; point in its line
              (when (and (eq 'dir-node-closed (treemacs-button-get ,btn :state))
                         (< index last-index))
-               (treemacs--expand-dir-node ,btn :git-future git-future))
+               (treemacs--expand-dir-node ,btn :git-future (or git-future
+                                                               (setq git-future (treemacs--git-status-process root ,project)))))
              (setq index (1+ index))))
          ,btn)))))
 

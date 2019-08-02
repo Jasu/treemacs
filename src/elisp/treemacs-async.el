@@ -332,6 +332,7 @@ Every string list consists of the following elements:
     (-let [default-directory path]
       (pfuture-new treemacs-python-executable
                    "-O"
+                   "-S"
                    treemacs--dirs-to-collpase.py
                    path
                    (number-to-string treemacs-collapse-dirs)

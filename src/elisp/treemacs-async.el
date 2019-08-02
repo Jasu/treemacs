@@ -134,16 +134,16 @@ Real implementation will be `fset' based on `treemacs-git-mode' value."
                        (treemacs-dom-node->children)
                        (-map #'treemacs-dom-node->key)
                        ;; Remove extension nodes
-                       (-filter #'stringp)))
-           (command `(,treemacs-python-executable
-                      "-O"
-                      ,treemacs--git-status.py
-                      ,git-root
-                      ,(number-to-string treemacs-max-git-entries)
-                      ,treemacs-git-command-pipe
-                      ,@open-dirs))
-           (future (apply #'pfuture-new command)))
-      future)))
+                       (-filter #'stringp))))
+      (apply #'pfuture-new
+             treemacs-python-executable
+             "-O"
+             "-S"
+             treemacs--git-status.py
+             git-root
+             (number-to-string treemacs-max-git-entries)
+             treemacs-git-command-pipe
+             open-dirs))))
 
 (defun treemacs--parse-git-status-extended (git-future)
   "Parse the git status derived from the output of GIT-FUTURE.

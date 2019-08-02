@@ -755,13 +755,14 @@ failed.  PROJECT is used for determining whether Git actions are appropriate."
              (setq dir-part (pop ,dir-parts)
                    root (f-expand dir-part root)
                    ,btn
-                   (let (current-btn)
+                   (let (current-btn path)
                      (cl-block search
                        ;; first a plain text-based search for the current dir-part string
                        ;; then we grab the node we landed at and see what's going on
                        ;; there's a couple ways this can go
                        (while (progn (goto-char (point-at-eol)) (search-forward dir-part nil :no-error))
-                         (setq current-btn (treemacs-current-button))
+                         (setq current-btn (treemacs-current-button)
+                               path (when current-btn (treemacs-button-get current-btn :path)))
                          (cond
                           ;; somehow we landed on a line where there isn't even anything to look at
                           ;; technically this should never happen, but better safe than sorry
@@ -770,9 +771,9 @@ failed.  PROJECT is used for determining whether Git actions are appropriate."
                           ;; the search matched a custom button - skip those, as they cannot match
                           ;; and their :paths are not strings, which would cause the following checks
                           ;; to crash
-                          ((treemacs-button-get current-btn :custom))
+                          ((not (stringp path)))
                           ;; perfect match - return the node we're at
-                          ((treemacs-is-path root :same-as (treemacs-button-get current-btn :path))
+                          ((treemacs-is-path root :same-as path)
                            (cl-return-from search current-btn))
                           ;; perfect match - taking collapsed dirs into account
                           ;; return the node, but make sure to advance the loop variables an

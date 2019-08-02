@@ -92,18 +92,6 @@ the height of treemacs' icons must be taken into account."
    (/ (- (window-pixel-height) (window-mode-line-height))
       (max treemacs--icon-size (frame-char-height)))))
 
-(define-inline treemacs--sort-alphabetic-asc (f1 f2)
-  "Sort F1 and F2 alphabetically asc."
-  (declare (pure t) (side-effect-free t))
-  (inline-letevals (f1 f2)
-    (inline-quote (string-lessp ,f2 ,f1))))
-
-(define-inline treemacs--sort-alphabetic-desc (f1 f2)
-  "Sort F1 and F2 alphabetically desc."
-  (declare (pure t) (side-effect-free t))
-  (inline-letevals (f1 f2)
-    (inline-quote (string-lessp ,f1 ,f2))))
-
 (define-inline treemacs--sort-alphabetic-case-insensitive-asc (f1 f2)
   "Sort F1 and F2 case insensitive alphabetically asc."
   (declare (pure t) (side-effect-free t))
@@ -158,8 +146,8 @@ the height of treemacs' icons must be taken into account."
        (let* ((file-name-handler-alist '(("\\`/[^/|:]+:" . tramp-autoload-file-name-handler)))
               (sort-func
                (pcase treemacs-sorting
-                 ('alphabetic-asc #'treemacs--sort-alphabetic-asc)
-                 ('alphabetic-desc #'treemacs--sort-alphabetic-desc)
+                 ('alphabetic-asc #'string-greaterp)
+                 ('alphabetic-desc #'string-lessp)
                  ('alphabetic-case-insensitive-asc  #'treemacs--sort-alphabetic-case-insensitive-asc)
                  ('alphabetic-case-insensitive-desc #'treemacs--sort-alphabetic-case-insensitive-desc)
                  ('size-asc #'treemacs--sort-size-asc)

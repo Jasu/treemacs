@@ -1133,7 +1133,7 @@ Valid states are 'visible, 'exists and 'none."
                         ,path
                       (-> ,path
                           (file-name-directory)
-                          (treemacs--unslash)))
+                          (substring 0 -1)))
        :top-level-extension-action (when (> (length ,path) 2) (butlast ,path))
        :directory-extension-action (if (> (length ,path) 2) (butlast ,path) (car ,path))
        :project-extension-action (if (> (length ,path) 2) (butlast ,path) (treemacs-project->path (car ,path)))))))

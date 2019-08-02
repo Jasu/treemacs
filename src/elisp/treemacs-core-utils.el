@@ -1073,14 +1073,14 @@ Will return t when FILE
   (declare (side-effect-free t) (pure t))
   (inline-letevals (file)
     (inline-quote
-     (let ((last (aref ,file (1- (length ,file)))))
-       (or (string-prefix-p ".#" ,file)
-           (and (eq ?# last) (eq ?# (aref ,file 0)))
-           (eq ?~ last)
-           (string-equal ,file ".")
-           (string-equal ,file "..")
-           (string-equal ,file ".git")
-           (string-prefix-p "flycheck_" ,file))))))
+     (or (string-equal ,file ".")
+         (string-equal ,file "..")
+         (string-equal ,file ".git")
+         (string-prefix-p ".#" ,file)
+         (let ((last (aref ,file (1- (length ,file)))))
+           (or (and (eq ?# last) (eq ?# (aref ,file 0)))
+               (eq ?~ last)))
+         (string-prefix-p "flycheck_" ,file)))))
 
 (define-inline treemacs--mac-ignore-file-predicate (file _)
   "Ignore FILE if it is .DS_Store and .localized.

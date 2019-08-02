@@ -79,3 +79,5 @@ def main():
     out.write(")")
 
 main()
+sys.stdout.flush()
+os._exit(0)

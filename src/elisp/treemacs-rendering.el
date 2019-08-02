@@ -433,9 +433,9 @@ set to PARENT."
             (format "%s is not readable."
                     (propertize (treemacs-project->path project) 'face 'font-lock-string-face)))
       (let* ((path (treemacs-button-get btn :path))
+             (collapse-future (treemacs--collapsed-dirs-process path project))
              (git-path (if (treemacs-button-get btn :symlink) (file-truename path) path))
-             (git-future (treemacs--git-status-process git-path project))
-             (collapse-future (treemacs--collapsed-dirs-process path project)))
+             (git-future (treemacs--git-status-process git-path project)))
         (treemacs--maybe-recenter treemacs-recenter-after-project-expand
           (treemacs--button-open
            :immediate-insert nil

@@ -150,18 +150,18 @@ Also called as advice after `load-theme', hence the ignored argument."
         (progn
           (when treemacs-fringe-indicator-mode
             (treemacs--move-fringe-indicator-to-point))
-          (-when-let (btn (treemacs-current-button))
-            (-when-let* ((pos (text-property-not-all btn (point-at-eol) 'img-selected nil))
-                         (img-selected (get-text-property pos 'img-selected)))
-              (treemacs-with-writable-buffer
-               (when (and treemacs--last-highlight
-                          (> (point-max) treemacs--last-highlight))
-                 (-when-let* ((last-pos (text-property-not-all (treemacs-button-start treemacs--last-highlight) (treemacs-button-end treemacs--last-highlight) 'img-unselected nil))
-                              (img-unselected (get-text-property last-pos 'img-unselected)))
-                   (put-text-property last-pos (1+ last-pos) 'display img-unselected)))
-               (when img-selected
-                 (put-text-property pos (1+ pos) 'display img-selected)
-                 (setq treemacs--last-highlight btn))))))
+          (-when-let* ((btn (treemacs-current-button))
+                       (pos (text-property-not-all btn (point-at-eol) 'img-selected nil))
+                       (img-selected (get-text-property pos 'img-selected)))
+            (treemacs-with-writable-buffer
+             (when (and treemacs--last-highlight
+                        (> (point-max) treemacs--last-highlight))
+               (-when-let* ((last-pos (text-property-not-all (treemacs-button-start treemacs--last-highlight) (treemacs-button-end treemacs--last-highlight) 'img-unselected nil))
+                            (img-unselected (get-text-property last-pos 'img-unselected)))
+                 (put-text-property last-pos (1+ last-pos) 'display img-unselected)))
+             (when img-selected
+               (put-text-property pos (1+ pos) 'display img-selected)
+               (setq treemacs--last-highlight btn)))))
       (error
        (treemacs-log "Error on highlight, this shouldn't happen: %s" e)))))
 

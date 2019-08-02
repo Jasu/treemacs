@@ -263,7 +263,7 @@ NODE-NAME is the variable individual nodes are bound to in NODE-ACTION."
   `(let* ((depth ,depth)
           (prefix (treemacs--get-indentation depth))
           ,@extra-vars)
-     (remove nil (mapcar (lambda (,node-name) ,node-action) ,nodes))))
+     (delq nil (mapcar (lambda (,node-name) ,node-action) ,nodes))))
 
 (defun treemacs--collapse-dirs (dirs)
   "Display DIRS as collpased.

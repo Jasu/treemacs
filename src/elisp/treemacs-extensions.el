@@ -230,9 +230,10 @@ KEYMAP is the user-supplied keymap symbol if any. DEFAULT-KEYMAP-NAME is the
 keymap name to use when the user-supplied KEYMAP is not provided.
 
 ACTIONS is a list consisting of entries of form (:ACTION COMMAND). Action should
-be either `:delete', `:copy', `:rename', or `:create'. Any unrecognized values
-will be discarded for forward-compatibility. Values of COMMAND should be valid
-key definitions for `define-key', for example commands or other keymaps."
+be either `:delete', `:copy', `:rename', `:peek', `:move', or `:create'. Any
+unrecognized values will be discarded for forward-compatibility. Values of
+COMMAND should be valid key definitions for `define-key', for example commands
+or other keymaps."
   (let* ((created-keymap (when (and (not keymap) actions) default-keymap-name))
          (keymap (or keymap created-keymap)))
     `(progn
@@ -246,6 +247,8 @@ key definitions for `define-key', for example commands or other keymaps."
           '((:delete . [remap treemacs-delete])
             (:rename . [remap treemacs-rename])
             (:copy   . [remap treemacs-copy-file])
+            (:peek   . [remap treemacs-peek])
+            (:move   . [remap treemacs-move-file])
             ;; Create is a prefix key, so it cannot be remapped. Bind directly to it.
             (:create . (kbd "c"))))
 
@@ -280,9 +283,10 @@ KEYMAP is a keymap to associate with the button. Keys in that map are active
 when the button is selected.
 
 ACTIONS is a list consisting of entries of form (:ACTION COMMAND). Action should
-be either `:delete', `:copy', `:rename', or `:create'. Any unrecognized values
-will be discarded for forward-compatibility. Values of COMMAND should be valid
-key definitions for `define-key', for example commands or other keymaps."
+be either `:delete', `:copy', `:rename', `:move', `:peek', or `:create'. Any
+unrecognized values will be discarded for forward-compatibility. Values of
+COMMAND should be valid key definitions for `define-key', for example commands
+or other keymaps."
   (declare (indent 1))
   (let ((state-name (intern (format "treemacs-%s-state" name)))
         (icon-name  (intern (format "treemacs-%s-icon" name))))
@@ -352,9 +356,10 @@ KEYMAP is a keymap variable to associate with the button. Keys in that map are
 active when the button is selected.
 
 ACTIONS is a list consisting of entries of form (:ACTION COMMAND). Action should
-be either `:delete', `:copy', `:rename', or `:create'. Any unrecognized values
-will be discarded for forward-compatibility. Values of COMMAND should be valid
-key definitions for `define-key', for example commands or other keymaps.
+be either `:delete', `:copy', `:rename', `:move', `:peek', or `:create'. Any
+unrecognized values will be discarded for forward-compatibility. Values of
+COMMAND should be valid key definitions for `define-key', for example commands
+or other keymaps.
 
 AFTER-EXPAND and AFTER-COLLAPSE are optional forms that will be called after a
 node has been expanded or collapsed. The closed or opened node marker will be

@@ -564,9 +564,9 @@ PROJECT: Project Struct"
 
 (defun treemacs--trim-trailing-newlines ()
   "Remove trailing newlines from the Treemacs buffer."
-  (save-excursion
-    (goto-char (point-max))
-    (while (eq (char-before) ?\n)
+  (while (eq (char-before (point-max)) ?\n)
+    (save-excursion
+      (goto-char (point-max))
       (delete-char -1))))
 
 (define-inline treemacs-do-update-node (path &optional force-expand)

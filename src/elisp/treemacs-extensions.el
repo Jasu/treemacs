@@ -221,10 +221,7 @@ node for quick retrieval later."
                                             keymap
                                             states
                                             default-keymap-name
-                                            delete-action
-                                            copy-action
-                                            rename-action
-                                            create-action)
+                                            actions)
   "Defines button types and keymap for node NAME.
 
 STATES is a list of states to create the button types for.
@@ -232,21 +229,26 @@ STATES is a list of states to create the button types for.
 KEYMAP is the user-supplied keymap symbol if any. DEFAULT-KEYMAP-NAME is the
 keymap name to use when the user-supplied KEYMAP is not provided.
 
-DELETE-ACTION, COPY-ACTION, RENAME-ACTION, and CREATE-ACTION are actions to add
-into that keymap."
-  (let* ((created-keymap (when (and (not keymap)
-                                    (or delete-action copy-action rename-action create-action))
-                           default-keymap-name))
+ACTIONS is a list consisting of entries of form (:ACTION COMMAND). Action should
+be either `:delete', `:copy', `:rename', or `:create'. Any unrecognized values
+will be discarded for forward-compatibility. Values of COMMAND should be valid
+key definitions for `define-key', for example commands or other keymaps."
+  (let* ((created-keymap (when (and (not keymap) actions) default-keymap-name))
          (keymap (or keymap created-keymap)))
     `(progn
        ,@(when created-keymap
            `((defvar ,created-keymap (make-sparse-keymap)
                ,(format "Keymap for %s buttons." (symbol-name name)))))
-       ,@(when delete-action `((define-key ,keymap [remap treemacs-delete]    ,delete-action)))
-       ,@(when rename-action `((define-key ,keymap [remap treemacs-rename]    ,rename-action)))
-       ,@(when copy-action   `((define-key ,keymap [remap treemacs-copy-file] ,copy-action)))
-       ;; Create is a prefix key, so it cannot be remapped. Bind directly to it.
-       ,@(when create-action `((define-key ,keymap (kbd "c")                  ,create-action)))
+
+       ,@(--mapcat
+          (-when-let (def (car (alist-get (car it) actions)))
+            `((define-key ,keymap ,(cdr it) ,def)))
+          '((:delete . [remap treemacs-delete])
+            (:rename . [remap treemacs-rename])
+            (:copy   . [remap treemacs-copy-file])
+            ;; Create is a prefix key, so it cannot be remapped. Bind directly to it.
+            (:create . (kbd "c"))))
+
        ,@(--map `(define-button-type ',it :supertype 'treemacs
                    ,@(when keymap `('keymap ,keymap)))
                 states))))
@@ -258,9 +260,7 @@ into that keymap."
                                         tab-action
                                         mouse1-action
                                         visit-action
-                                        delete-action
-                                        copy-action
-                                        rename-action
+                                        actions
                                         keymap)
   "Define a type of node that is a leaf and cannot be further expanded.
 
@@ -279,11 +279,10 @@ type. VISIT-ACTION is used in `treemacs-visit-node-no-split' actions.
 KEYMAP is a keymap to associate with the button. Keys in that map are active
 when the button is selected.
 
-DELETE-ACTION, COPY-ACTION, and RENAME-ACTIONS are actions to perform when user
-requests the respective action. The actions must be interactive functions, as
-they are bound to the keymap of the button. The actions are not called with any
-arguments (except as specified by their interactive specifier.) The actions are
-added to KEYMAP if specified, otherwise a new keymap is created."
+ACTIONS is a list consisting of entries of form (:ACTION COMMAND). Action should
+be either `:delete', `:copy', `:rename', or `:create'. Any unrecognized values
+will be discarded for forward-compatibility. Values of COMMAND should be valid
+key definitions for `define-key', for example commands or other keymaps."
   (declare (indent 1))
   (let ((state-name (intern (format "treemacs-%s-state" name)))
         (icon-name  (intern (format "treemacs-%s-icon" name))))
@@ -302,11 +301,9 @@ added to KEYMAP if specified, otherwise a new keymap is created."
 
        (treemacs--define-button-types ,name
                                       :states (,state-name)
-                                      ,@(when keymap `(:keymap ,keymap))
+                                      :keymap ,keymap
                                       :default-keymap-name ,(intern (format "treemacs-%s-map" name))
-                                      ,@(when delete-action `(:delete-action ,delete-action))
-                                      ,@(when rename-action `(:rename-action ,rename-action))
-                                      ,@(when copy-action   `(:copy-action   ,copy-action)))
+                                      :actions ,actions)
        t)))
 
 (cl-defmacro treemacs-define-expandable-node
@@ -320,10 +317,7 @@ added to KEYMAP if specified, otherwise a new keymap is created."
           ret-action
           visit-action
           keymap
-          delete-action
-          copy-action
-          rename-action
-          create-action
+          actions
           after-expand
           after-collapse
           top-level-marker
@@ -357,13 +351,10 @@ nodes both TAB and RET should toggle expansion/collapse. VISIT-ACTION is used in
 KEYMAP is a keymap variable to associate with the button. Keys in that map are
 active when the button is selected.
 
-DELETE-ACTION, COPY-ACTION, RENAME-ACTIONS, and CREATE-ACTION are actions to
-perform when user requests the respective action. The actions must be
-interactive functions, as they are bound to the keymap of the button. The
-actions are not called with any arguments (except as specified by their
-interactive specifier.) CREATE-ACTION is also active for the direct children of
-this node. The actions are added to KEYMAP if specified, otherwise a new keymap
-is created.
+ACTIONS is a list consisting of entries of form (:ACTION COMMAND). Action should
+be either `:delete', `:copy', `:rename', or `:create'. Any unrecognized values
+will be discarded for forward-compatibility. Values of COMMAND should be valid
+key definitions for `define-key', for example commands or other keymaps.
 
 AFTER-EXPAND and AFTER-COLLAPSE are optional forms that will be called after a
 node has been expanded or collapsed. The closed or opened node marker will be
@@ -413,7 +404,8 @@ additional keys."
         (collapse-name         (intern (format "treemacs-collapse-%s"     (symbol-name name))))
         (do-expand-name        (intern (format "treemacs--do-expand-%s"   (symbol-name name))))
         (do-collapse-name      (intern (format "treemacs--do-collapse-%s" (symbol-name name))))
-        (child-keymap-name     (intern (format "treemacs--%s-child-map"   (symbol-name name)))))
+        (child-keymap-name     (intern (format "treemacs--%s-child-map"   (symbol-name name))))
+        (create-action         (car (alist-get :create actions))))
     `(progn
        ,(when open-icon-name
           `(defvar ,open-icon-name ,icon-open))
@@ -430,13 +422,12 @@ additional keys."
 
        (treemacs--define-button-types ,name
                                       :states (,open-state-name ,closed-state-name)
-                                      ,@(when keymap `(:keymap ,keymap))
+                                      :keymap ,keymap
                                       :default-keymap-name ,(intern (format "treemacs-%s-map" name))
-                                      ,@(when delete-action `(:delete-action ,delete-action))
-                                      ,@(when rename-action `(:rename-action ,rename-action))
-                                      ,@(when copy-action   `(:copy-action   ,copy-action))
-                                      ,@(when create-action `(:create-action ,create-action)))
+                                      :actions ,actions)
 
+       ;; Special handling for the create action, to make it apply to the child
+       ;; nodes.
        ,@(when create-action
            `((defvar ,child-keymap-name (let ((map (make-sparse-keymap)))
                                           (define-key map (kbd "c") ,create-action)

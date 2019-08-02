@@ -746,13 +746,14 @@ failed.  PROJECT is used for determining whether Git actions are appropriate."
          ('root-node-closed (treemacs--expand-root-node ,btn)))
        (catch 'follow-failed
          (let ((index 0)
-               (dir-part nil))
+               (dir-part nil)
+               (case-fold-search))
            ;; for every item in dir-parts append it to the already found path for a new
            ;; 'root' to follow, so for root = /x/ and dir-parts = [src, config, foo.el]
            ;; consecutively try to move to /x/src, /x/src/confg and finally /x/src/config/foo.el
            (while ,dir-parts
              (setq dir-part (pop ,dir-parts)
-                   root (f-join root dir-part)
+                   root (f-expand dir-part root)
                    ,btn
                    (let (current-btn)
                      (cl-block search

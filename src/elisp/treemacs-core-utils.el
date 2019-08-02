@@ -659,7 +659,7 @@ GIT-INFO: Pfuture|HashMap<String, String>"
                 (-reject #'treemacs-dom-node->closed)
                 (-map #'treemacs-dom-node->key)
                 (treemacs--maybe-filter-dotfiles)))
-     (-if-let (pos (treemacs-goto-node it))
+     (-if-let (pos (treemacs-find-node it))
          (treemacs--reopen-node pos git-info)
        (treemacs-on-collapse it :purge)))))
 

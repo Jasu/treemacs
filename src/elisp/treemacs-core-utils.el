@@ -382,7 +382,7 @@ FILE here is a list consisting of an absolute path and file attributes."
   (declare (side-effect-free t))
   (inline-letevals (file)
     (inline-quote
-     (let ((filename (treemacs--filename ,file)))
+     (let ((filename (file-name-nondirectory ,file)))
        (--none? (funcall it filename ,file) treemacs-ignored-file-predicates)))))
 
 (define-inline treemacs--reject-ignored-and-dotfiles (file)
@@ -391,7 +391,7 @@ FILE here is a list consisting of an absolute path and file attributes."
   (declare (side-effect-free t))
   (inline-letevals (file)
     (inline-quote
-     (let ((filename (treemacs--filename ,file)))
+     (let ((filename (file-name-nondirectory ,file)))
        (and (not (s-matches? treemacs-dotfiles-regex filename))
             (--none? (funcall it filename ,file) treemacs-ignored-file-predicates))))))
 

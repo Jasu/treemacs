@@ -404,10 +404,11 @@ and special names like this."
   (declare (pure t) (side-effect-free t))
   (inline-quote
    (let ((filename (treemacs--filename ,file)))
-     (save-match-data
-       (if (string-match "\\.[^.]*\\'" filename)
-           (substring filename (1+ (match-beginning 0)))
-         filename)))))
+     (or
+      (-some-->
+       (string-match-p "\\.[^.]*\\'" filename)
+       (substring filename (1+ it)))
+      filename))))
 
 (define-inline treemacs-is-treemacs-window? (window)
   "Return t when WINDOW is showing a treemacs buffer."

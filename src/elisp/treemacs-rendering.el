@@ -355,47 +355,46 @@ which directories should be displayed as one. The buttons' parent property is
 set to PARENT."
   (inline-letevals (root depth git-future collapse-process parent)
     (inline-quote
-     (save-excursion
-       (let* ((dirs-and-files (treemacs--get-dir-content ,root))
-              (dirs (cl-first dirs-and-files))
-              (,root (--if-let (file-truename (treemacs-button-get ,parent :path))
-                         it
-                       ,root))
-              (files (cl-second dirs-and-files))
-              ;; as reopening is done recursively the parsed git status is passed down to subsequent calls
-              ;; so there are two possibilities: either the future given to this function is a pfuture object
-              ;; that needs to complete and be parsed or it's an already finished git status hash table
-              ;; additionally when git mode is deferred we don't parse the git output right here, it is instead done later
-              ;; by means of an idle timer. The git info used is instead fetched from `treemacs--git-cache', which is
-              ;; based on previous invocations
-              ;; if git-mode is disabled there is nothing to do - in this case the git status parse function will always
-              ;; produce an empty hash table
-              (git-info (pcase treemacs-git-mode
-                          ((or 'simple 'extended)
-                           (treemacs--get-or-parse-git-result ,git-future))
-                          ('deferred
-                            (run-with-timer 0.5 nil #'treemacs--apply-deferred-git-state ,parent ,git-future (current-buffer))
-                            (or (ht-get treemacs--git-cache ,root) (ht)))
-                          (_ (ht)))))
+     (let* ((dirs-and-files (treemacs--get-dir-content ,root))
+            (dirs (cl-first dirs-and-files))
+            (,root (--if-let (file-truename (treemacs-button-get ,parent :path))
+                       it
+                     ,root))
+            (files (cl-second dirs-and-files))
+            ;; as reopening is done recursively the parsed git status is passed down to subsequent calls
+            ;; so there are two possibilities: either the future given to this function is a pfuture object
+            ;; that needs to complete and be parsed or it's an already finished git status hash table
+            ;; additionally when git mode is deferred we don't parse the git output right here, it is instead done later
+            ;; by means of an idle timer. The git info used is instead fetched from `treemacs--git-cache', which is
+            ;; based on previous invocations
+            ;; if git-mode is disabled there is nothing to do - in this case the git status parse function will always
+            ;; produce an empty hash table
+            (git-info (pcase treemacs-git-mode
+                        ((or 'simple 'extended)
+                         (treemacs--get-or-parse-git-result ,git-future))
+                        ('deferred
+                          (run-with-timer 0.5 nil #'treemacs--apply-deferred-git-state ,parent ,git-future (current-buffer))
+                          (or (ht-get treemacs--git-cache ,root) (ht)))
+                        (_ (ht)))))
 
-         (dolist (string (treemacs--create-buttons
-                          :nodes dirs
-                          :extra-vars ((dir-prefix (concat prefix treemacs-icon-dir-closed)))
-                          :depth ,depth
-                          :node-name node
-                          :node-action (treemacs--create-dir-button-strings node dir-prefix ,parent ,depth git-info)))
-           (insert string "\n"))
+       (dolist (string (treemacs--create-buttons
+                        :nodes dirs
+                        :extra-vars ((dir-prefix (concat prefix treemacs-icon-dir-closed)))
+                        :depth ,depth
+                        :node-name node
+                        :node-action (treemacs--create-dir-button-strings node dir-prefix ,parent ,depth git-info)))
+         (insert string ?\n))
 
-         (dolist (string (treemacs--create-buttons
-                          :nodes files
-                          :depth ,depth
-                          :node-name node
-                          :node-action (treemacs--create-file-button-strings node prefix ,parent ,depth git-info)))
-           (insert string "\n"))
+       (dolist (string (treemacs--create-buttons
+                        :nodes files
+                        :depth ,depth
+                        :node-name node
+                        :node-action (treemacs--create-file-button-strings node prefix ,parent ,depth git-info)))
+         (insert string ?\n))
 
-         (save-excursion
-           (treemacs--collapse-dirs (treemacs--parse-collapsed-dirs ,collapse-process))
-           (treemacs--reopen-at ,root ,git-future)))))))
+       (save-excursion
+         (treemacs--collapse-dirs (treemacs--parse-collapsed-dirs ,collapse-process))
+         (treemacs--reopen-at ,root ,git-future))))))
 
 (cl-defmacro treemacs--button-close (&key button new-state new-icon post-close-action)
   "Close node given by BUTTON, use NEW-ICON and set state of BUTTON to NEW-STATE."

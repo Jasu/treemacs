@@ -74,14 +74,14 @@ DEFAULT: Face"
   (declare (pure t) (side-effect-free t))
   (inline-letevals (status default)
     (inline-quote
-     (pcase ,status
-       ("M" 'treemacs-git-modified-face)
-       ("U" 'treemacs-git-conflict-face)
-       ("?" 'treemacs-git-untracked-face)
-       ("!" 'treemacs-git-ignored-face)
-       ("A" 'treemacs-git-added-face)
-       ("R" 'treemacs-git-renamed-face)
-       (_   ,default)))))
+     (cond ((not ,status) ,default)
+           ((string= "M" ,status) 'treemacs-git-modified-face)
+           ((string= "?" ,status) 'treemacs-git-untracked-face)
+           ((string= "!" ,status) 'treemacs-git-ignored-face)
+           ((string= "A" ,status) 'treemacs-git-added-face)
+           ((string= "R" ,status) 'treemacs-git-renamed-face)
+           ((string= "U" ,status) 'treemacs-git-conflict-face)
+           (t ,default)))))
 
 (define-inline treemacs--get-node-face (path git-info default)
   "Return the appropriate face for PATH based on GIT-INFO.

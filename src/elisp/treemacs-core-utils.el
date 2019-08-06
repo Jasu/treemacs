@@ -279,8 +279,17 @@ button type on every call."
 (define-inline treemacs--get-label-of (btn)
   "Return the text label of BTN."
   (declare (side-effect-free t))
-  (inline-quote
-   (buffer-substring-no-properties (treemacs-button-start ,btn) (treemacs-button-end ,btn))))
+
+  (inline-letevals (btn)
+    (inline-quote
+     (let ((start (treemacs-button-start ,btn))
+           (end (treemacs-button-end ,btn)))
+       (s-trim-left (buffer-substring-no-properties
+                     (or (-some->
+                          (text-property-not-all start end 'icon nil)
+                          (next-single-property-change 'icon))
+                         (treemacs-button-start ,btn))
+                     (treemacs-button-end ,btn)))))))
 
 (defun treemacs--replace-recentf-entry (old-file new-file)
   "Replace OLD-FILE with NEW-FILE in the recent file list."
@@ -341,12 +350,12 @@ Returns nil if no such buffer exists.."
   (inline-letevals (new-sym)
     (inline-quote
      (let* ((icon-start (text-property-any (line-beginning-position) (line-end-position) 'icon t))
-            (icon-end (next-single-property-change icon-start 'icon))
+            (icon-end (+ icon-start (length ,new-sym)))
             (old-properties (text-properties-at icon-end)))
        (delete-region icon-start icon-end)
        (save-excursion
          (goto-char icon-start)
-         (insert new-sym)
+         (insert ,new-sym)
          (add-text-properties icon-start (point) old-properties))))))
 
 (defun treemacs-project-of-node (node)

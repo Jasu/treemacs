@@ -342,8 +342,12 @@ Returns nil if no such buffer exists.."
     (inline-quote
      (let* ((icon-start (text-property-any (line-beginning-position) (line-end-position) 'icon t))
             (icon-end (next-single-property-change icon-start 'icon))
-            (new-properties (text-properties-at 0 ,new-sym)))
-       (add-text-properties icon-start icon-end new-properties)))))
+            (old-properties (text-properties-at icon-end)))
+       (delete-region icon-start icon-end)
+       (save-excursion
+         (goto-char icon-start)
+         (insert new-sym)
+         (add-text-properties icon-start (point) old-properties))))))
 
 (defun treemacs-project-of-node (node)
   "Find the project the given NODE belongs to."
